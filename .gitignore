@@ -4,6 +4,7 @@
 *.tar
 
 # ===== SDK & 大文件 =====
+data/
 smartsens_sdk/
 A1_SDK_SC132GS/
 
@@ -39,8 +40,11 @@ Thumbs.db
 
 # 编译产物
 output/
+build/
 *.o
 *.a
+*.bin
+*.elf
 
 # Python
 __pycache__/
