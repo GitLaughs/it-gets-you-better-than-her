@@ -35,7 +35,6 @@ Thumbs.db
 .DS_Store
 
 # Docker
-docker/data/
 *.tar          # 不要提交大镜像文件
 
 # 编译产物
