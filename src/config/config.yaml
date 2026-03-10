@@ -1,0 +1,128 @@
+# =============================================
+# A1 视觉系统全局配置
+# =============================================
+
+system:
+  name: "A1_Vision_System"
+  version: "0.1.0"
+  log_level: "INFO"
+  log_dir: "logs"
+
+# --- 摄像头配置 ---
+camera:
+  width: 1080
+  height: 1280
+  fps: 30
+  auto_exposure: true
+  auto_white_balance: true
+  hdr_enabled: true
+  flip_horizontal: false
+  flip_vertical: false
+  rotation: 0
+
+# --- HDR配置 ---
+hdr:
+  hdr_mode: "auto"         # off / software / hardware / auto
+  hdr_enabled: true
+  brightness_low: 30
+  brightness_high: 220
+  variance_threshold: 40
+  switch_cooldown: 2.0
+
+# --- 目标检测 ---
+detection:
+  model_path: "models/yolov8n.pt"
+  model_type: "yolov8n"
+  confidence_threshold: 0.5
+  nms_threshold: 0.45
+  input_size: [640, 640]
+  device: "cpu"             # cpu / cuda / npu
+  classes: null             # null表示检测所有类别
+  max_detections: 100
+  half_precision: false
+
+# --- 目标跟踪 ---
+tracking:
+  algorithm: "bytetrack"    # bytetrack / deepsort / sort
+  max_age: 30
+  min_hits: 3
+  iou_threshold: 0.3
+  # ByteTrack
+  track_thresh: 0.5
+  track_buffer: 30
+  match_thresh: 0.8
+  # DeepSORT
+  max_cosine_distance: 0.3
+  nn_budget: 100
+  reid_model_path: ""
+
+# --- 深度估计 ---
+depth:
+  model_type: "midas_small"  # midas_small / midas_v21 / dpt_large / monodepth2
+  model_path: "models/midas_v21_small.pt"
+  input_size: [256, 256]
+  device: "cpu"
+  output_scale: 1.0
+  min_depth: 0.1
+  max_depth: 10.0
+  temporal_smoothing: true
+  smoothing_alpha: 0.7
+
+# --- 点云 ---
+pointcloud:
+  voxel_size: 0.02
+  max_points: 100000
+  color_map: "jet"
+  visualization_backend: "open3d"   # open3d / opencv
+  accumulate_frames: 10
+  save_format: "ply"
+
+# --- 定位 ---
+localization:
+  method: "visual_odometry"      # visual_odometry / orb_slam / imu_fusion
+  feature_type: "orb"
+  max_features: 1000
+  use_imu: false
+  coordinate_system: "camera"
+
+# --- 避障 ---
+navigation:
+  strategy: "hybrid"             # vfh / apf / simple / hybrid
+  max_linear_speed: 0.5
+  max_angular_speed: 1.0
+  critical_distance: 0.3
+  danger_distance: 0.8
+  warning_distance: 1.5
+  safe_distance: 3.0
+  smoothing_factor: 0.7
+  vfh_sectors: 72
+  vfh_threshold: 0.5
+  apf_k_att: 1.0
+  apf_k_rep: 100.0
+  apf_rep_range: 2.0
+
+# --- 灵巧手 ---
+hand:
+  connection_type: "mock"        # serial / tcp / udp / mock
+  serial_port: "/dev/ttyUSB0"
+  serial_baudrate: 115200
+  tcp_host: "192.168.1.100"
+  tcp_port: 9000
+  protocol_version: "1.0"
+
+# --- 显示 ---
+display:
+  output_type: "opencv_window"   # opencv_window / framebuffer / hdmi / spi_lcd / file
+  width: 640
+  height: 480
+  fps: 30
+  fullscreen: false
+  show_fps: true
+  show_timestamp: true
+  show_status: true
+  output_path: "output/output.mp4"
+  codec: "mp4v"
+
+# --- 异常处理 ---
+exception:
+  max_records: 1000

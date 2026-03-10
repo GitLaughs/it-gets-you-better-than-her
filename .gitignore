@@ -1,0 +1,50 @@
+# E:\it-gets-you-better-than-her\.gitignore
+
+# ===== Docker 镜像 =====
+*.tar
+
+# ===== SDK & 大文件 =====
+data/
+smartsens_sdk/
+A1_SDK_SC132GS/
+
+# ===== 模型权重 =====
+models/*.pt
+models/*.onnx
+models/*.engine
+!models/.gitkeep
+
+# ===== 输出 =====
+output/*
+!output/.gitkeep
+
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+
+# ===== OS =====
+Thumbs.db
+.DS_Store
+
+# Docker
+docker/data/
+*.tar          # 不要提交大镜像文件
+
+# 编译产物
+output/
+*.o
+*.a
+
+# Python
+__pycache__/
+*.pyc
+.venv/
