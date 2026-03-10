@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  a1-builder:
+  dev:
     image: a1-sdk-builder
     container_name: A1_Builder
     stdin_open: true    # -i
@@ -9,12 +9,12 @@ services:
     volumes:
       # 挂载 SDK 数据
       - ../data:/home/smartsens_flying_chip_a1_sdk
-      # 挂载整个项目（只读保护可选）
-      - ..:/workspace/project
-      # 挂载模型（大文件单独管理）
-      - ../models:/workspace/models
+      # 挂载 src 目录
+      - ../src:/home/my_project
+      # 挂载模型目录
+      - ../models:/home/models
       # 挂载输出目录
-      - ../output:/workspace/output
-    working_dir: /workspace/project
+      - ../output:/home/output
+    working_dir: /home/my_project
     # 如有需要，指定 entrypoint
-    # entrypoint: /workspace/project/docker/entrypoint.sh
+    # entrypoint: /home/my_project/docker/entrypoint.sh

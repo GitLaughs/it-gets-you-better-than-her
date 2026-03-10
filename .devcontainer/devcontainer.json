@@ -2,14 +2,36 @@
   "name": "A1 SDK Dev",
   "dockerComposeFile": "../docker/docker-compose.yml",
   "service": "dev",
-  "workspaceFolder": "/workspace",
+  "workspaceFolder": "/home/my_project",
+
+  "shutdownAction": "stopCompose",
+
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
         "ms-python.pylint",
-        "ms-toolsai.jupyter"
-      ]
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter",
+        "ms-vscode.cpptools",
+        "eamodio.gitlens",
+        "streetsidesoftware.code-spell-checker",
+        "github.copilot"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
     }
-  }
+  },
+
+  "postCreateCommand": "pip install --no-cache-dir -r /home/my_project/../requirements.txt || true && echo 'Dev container ready!'",
+
+  "features": {
+    "git": "os-provided"
+  },
+
+  "forwardPorts": [6006, 8888, 8080],
+
+  "overrideCommand": ""
 }

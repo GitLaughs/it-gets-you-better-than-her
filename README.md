@@ -2,26 +2,26 @@
 
 > A1 Vision Pi 端侧智能视觉系统 — 基于思特威SC132GS + 飞凌微A1开发套件
 
-[![GitHub Issues](https://img.shields.io/github/issues/GitLaughs/it-gets-you-better-than-her)](https://github.com/GitLaughs/it-gets-you-better-than-her/issues)
-[![Docker](https://img.shields.io/badge/Docker-Supported-blue)](./docker/)
+[!\[GitHub Issues\](https://img.shields.io/github/issues/GitLaughs/it-gets-you-better-than-her null)](https://github.com/GitLaughs/it-gets-you-better-than-her/issues)
+[!\[Docker\](https://img.shields.io/badge/Docker-Supported-blue null)](./docker/)
 
----
+***
 
 ## 📋 功能列表
 
-| # | 功能模块 | 说明 | 优先级 |
-|---|---------|------|--------|
-| 1 | YOLOv8 目标检测 | 基于NPU加速的实时目标检测 | ⭐⭐⭐ |
-| 2 | 目标跟踪 | ByteTrack 多目标跟踪 | ⭐⭐⭐ |
-| 3 | 单目深度估计 | 轻量级单目深度感知 | ⭐⭐⭐ |
-| 4 | 三维点云可视化 | 深度图转点云 + 外设屏幕输出 | ⭐⭐ |
-| 5 | 自身定位与目标坐标 | 视觉里程计 + 目标3D坐标估计 | ⭐⭐⭐ |
-| 6 | 避障算法 | 基于深度图的实时避障 | ⭐⭐⭐ |
-| 7 | 灵巧手接口 | UART/I2C 外设控制接口 | ⭐⭐ |
-| 8 | HDR模式切换 | 光线自适应 HDR 控制 | ⭐⭐ |
-| 9 | 异常处理系统 | 摄像头/推理/资源 三级异常保护 | ⭐⭐ |
+| # | 功能模块        | 说明               | 优先级 |
+| - | ----------- | ---------------- | --- |
+| 1 | YOLOv8 目标检测 | 基于NPU加速的实时目标检测   | ⭐⭐⭐ |
+| 2 | 目标跟踪        | ByteTrack 多目标跟踪  | ⭐⭐⭐ |
+| 3 | 单目深度估计      | 轻量级单目深度感知        | ⭐⭐⭐ |
+| 4 | 三维点云可视化     | 深度图转点云 + 外设屏幕输出  | ⭐⭐  |
+| 5 | 自身定位与目标坐标   | 视觉里程计 + 目标3D坐标估计 | ⭐⭐⭐ |
+| 6 | 避障算法        | 基于深度图的实时避障       | ⭐⭐⭐ |
+| 7 | 灵巧手接口       | UART/I2C 外设控制接口  | ⭐⭐  |
+| 8 | HDR模式切换     | 光线自适应 HDR 控制     | ⭐⭐  |
+| 9 | 异常处理系统      | 摄像头/推理/资源 三级异常保护 | ⭐⭐  |
 
----
+***
 
 ## 📁 项目目录结构
 
@@ -41,11 +41,12 @@ it-gets-you-better-than-her/         ← GitHub 仓库根目录
 ```
 
 > **说明：**
+>
 > - `data/` 是 Docker 的挂载点，存放官方 SDK，体积大且属于第三方，不放入 Git
 > - `a1-sdk-builder-latest.tar` 是 Docker 镜像文件，需通过网盘或内网单独分发
 > - `src/` 下的所有代码实时同步到容器内，无需手动复制
 
----
+***
 
 ## 🚀 首次环境搭建（每人只做一次）
 
@@ -64,7 +65,7 @@ cd it-gets-you-better-than-her
 
 ### 第二步：获取并放置 Docker 镜像文件
 
-`a1-sdk-builder-latest.tar` 需要从队友处获取（网盘/U盘/内网共享），放到仓库根目录：
+`a1-sdk-builder-latest.tar` 需要从钉钉/论坛获取，放到仓库根目录：
 
 ```
 it-gets-you-better-than-her/
@@ -87,7 +88,7 @@ docker images
 ```powershell
 mkdir data
 cd data
-git clone <官方SDK地址>    # 替换为实际 SDK 仓库地址
+git clone --depth 1  https://git.smartsenstech.ai/Smartsens/A1_SDK_SC132GS.git
 cd ..
 ```
 
@@ -105,12 +106,17 @@ docker exec -it A1_Builder /bin/bash
 ls /home/my_project                      # 应看到 src/ 下的代码
 ls /home/smartsens_flying_chip_a1_sdk    # 应看到 a1_sdk_sc132gs/
 exit
+
+#或者
+# 使用 Docker Compose 启动（推荐多容器场景）
+cd docker
+docker-compose up -d
 ```
 
 > **路径说明：**
 > Windows 的 `E:\...\src` → 容器内的 `/home/my_project`（实时双向同步，不是拷贝）
 
----
+***
 
 ## 🔄 实际构建流程
 
@@ -136,7 +142,7 @@ exit
 └───────────────────────────┘
 ```
 
----
+***
 
 ## 💻 日常开发流程（VS Code + Dev Containers）
 
@@ -145,8 +151,8 @@ exit
 1. 确认容器正在运行：`docker ps`（看到 `A1_Builder`）
 2. VS Code 左下角点击 **`><`** 图标
 3. 选择 **Attach to Running Container**
-4. 选择 **/A1_Builder**
-5. 新窗口打开后：**File → Open Folder → `/home/my_project`**
+4. 选择 **/A1\_Builder**
+5. 新窗口打开后：**File → Open Folder →** **`/home/my_project`**
 
 现在 VS Code 的编辑器和底部终端**都在容器环境内**，可以直接编译运行。
 
@@ -178,15 +184,15 @@ docker ps                        # 查看运行中的容器
 docker ps -a                     # 查看所有容器（含已停止）
 ```
 
----
+***
 
 ## 👥 团队分工
 
-| 成员 | 负责模块 | 分支 |
-|------|---------|------|
-| 成员A | 检测 + 跟踪 + 摄像头管理 | `feature/perception-pipeline` |
-| 成员B | 深度 + 点云 + 定位 + 导航 | `feature/spatial-intelligence` |
-| 成员C | 显示 + 灵巧手 + 系统集成 + 异常处理 | `feature/system-integration` |
+| 成员  | 负责模块                   | 分支                             |
+| --- | ---------------------- | ------------------------------ |
+| 成员A | 检测 + 跟踪 + 摄像头管理        | `feature/perception-pipeline`  |
+| 成员B | 深度 + 点云 + 定位 + 导航      | `feature/spatial-intelligence` |
+| 成员C | 显示 + 灵巧手 + 系统集成 + 异常处理 | `feature/system-integration`   |
 
 ### 分支协作规范
 
@@ -200,19 +206,19 @@ git checkout -b feature/你的功能名
 git push origin feature/你的功能名
 ```
 
----
+***
 
 ## ⚠️ 常见问题
 
-| 问题 | 原因 | 解决方法 |
-|------|------|---------|
-| 容器内看不到代码 | 路径用了 `./` 相对路径 | 改用 `${PWD}\src` 绝对路径重建容器 |
-| Permission denied | 文件权限问题 | 容器内执行 `chmod -R 777 /home/my_project` |
-| 容器不见了 | 电脑重启后容器停止 | `docker start A1_Builder` |
-| 容器删了代码还在吗 | 代码在 Windows `src/` 里 | 放心，重建容器代码不会丢失 |
-| `docker images` 看不到镜像 | tar 未加载或加载失败 | 重新执行 `docker load -i a1-sdk-builder-latest.tar` |
+| 问题                    | 原因                   | 解决方法                                            |
+| --------------------- | -------------------- | ----------------------------------------------- |
+| 容器内看不到代码              | 路径用了 `./` 相对路径       | 改用 `${PWD}\src` 绝对路径重建容器                        |
+| Permission denied     | 文件权限问题               | 容器内执行 `chmod -R 777 /home/my_project`           |
+| 容器不见了                 | 电脑重启后容器停止            | `docker start A1_Builder`                       |
+| 容器删了代码还在吗             | 代码在 Windows `src/` 里 | 放心，重建容器代码不会丢失                                   |
+| `docker images` 看不到镜像 | tar 未加载或加载失败         | 重新执行 `docker load -i a1-sdk-builder-latest.tar` |
 
----
+***
 
 ## 📦 镜像文件分发说明
 
@@ -223,7 +229,7 @@ git push origin feature/你的功能名
 
 获取后放置到仓库根目录即可，`.gitignore` 已配置忽略该文件。
 
----
+***
 
 ## 📄 License
 
