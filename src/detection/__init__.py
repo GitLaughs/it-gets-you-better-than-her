@@ -1,1 +1,0 @@
-"""Detection module — YOLOv8 object detection."""
