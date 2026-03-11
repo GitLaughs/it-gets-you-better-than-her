@@ -33,8 +33,14 @@ from display.video_output import VideoOutputManager
 class A1VisionSystem:
     """A1视觉系统主控制器"""
 
-    def __init__(self, config_path: str = "src/config/config.yaml"):
+    def __init__(self, config_path: str = "config/config.yaml"):
         # 加载配置
+        # 尝试相对路径和绝对路径
+        if not os.path.exists(config_path):
+            # 尝试 src/ 目录下的相对路径
+            alt_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), config_path)
+            if os.path.exists(alt_path):
+                config_path = alt_path
         self.config = load_config(config_path)
 
         # 初始化日志
@@ -315,7 +321,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="A1 Vision System")
     parser.add_argument(
         '--config', type=str,
-        default='src/config/config.yaml',
+        default='config/config.yaml',
         help='配置文件路径'
     )
     parser.add_argument(

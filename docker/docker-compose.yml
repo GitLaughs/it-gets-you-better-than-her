@@ -8,13 +8,13 @@ services:
     tty: true           # -t
     volumes:
       # 挂载 SDK 数据
-      - ../data:/home/smartsens_flying_chip_a1_sdk
+      - ../data:/workspace/A1_Builder/smartsens_sdk
       # 挂载 src 目录
-      - ../src:/home/my_project
+      - ../src:/workspace/project
       # 挂载模型目录
-      - ../models:/home/models
+      - ../models:/workspace/A1_Builder/models
       # 挂载输出目录
-      - ../output:/home/output
-    working_dir: /home/my_project
+      - ../output:/workspace/A1_Builder/output
+    working_dir: /workspace/project
     # 如有需要，指定 entrypoint
     # entrypoint: /home/my_project/docker/entrypoint.sh

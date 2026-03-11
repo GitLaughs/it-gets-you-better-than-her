@@ -97,14 +97,14 @@ cd ..
 ```powershell
 # Windows PowerShell — 使用绝对路径（./相对路径在 Windows 下可能失效）
 docker run -itd --name A1_Builder `
-  -v "${PWD}\data:/home/smartsens_flying_chip_a1_sdk" `
-  -v "${PWD}\src:/home/my_project" `
+  -v "${PWD}\data:/workspace/A1_Builder/smartsens_sdk" `
+  -v "${PWD}\src:/workspace/project" `
   a1-sdk-builder
 
 # 验证挂载是否成功
 docker exec -it A1_Builder /bin/bash
-ls /home/my_project                      # 应看到 src/ 下的代码
-ls /home/smartsens_flying_chip_a1_sdk    # 应看到 a1_sdk_sc132gs/
+ls /workspace/project                      # 应看到 src/ 下的代码
+ls /workspace/A1_Builder/smartsens_sdk    # 应看到 a1_sdk_sc132gs/
 exit
 
 #或者
@@ -114,7 +114,7 @@ docker-compose up -d
 ```
 
 > **路径说明：**
-> Windows 的 `E:\...\src` → 容器内的 `/home/my_project`（实时双向同步，不是拷贝）
+> Windows 的 `E:\...\src` → 容器内的 `/workspace/project`（实时双向同步，不是拷贝）
 
 ***
 
@@ -131,14 +131,19 @@ docker-compose up -d
           ▼
 ┌───────────────────────────┐
 │ 容器: A1_Builder          │  ← 运行中
-│  /home/my_project/        │  ← 挂载自 src/（你的代码）
-│  /home/.../a1_sdk_sc132gs/│  ← 挂载自 data/（官方SDK）
+│  /workspace/project/      │  ← 挂载自 src/（你的代码）
+│  /workspace/A1_Builder/   │
+│    ├── smartsens_sdk/     │  ← 挂载自 data/（官方SDK）
+│    ├── models/            │  ← 挂载自 models/（模型）
+│    └── output/            │  ← 挂载自 output/（输出）
 └───────────────────────────┘
           ↕ 实时同步（非拷贝）
 ┌───────────────────────────┐
 │ Windows 宿主机             │
 │  src/        （写代码）    │
 │  data/       （SDK）      │
+│  models/     （模型）      │
+│  output/     （输出）      │
 └───────────────────────────┘
 ```
 
@@ -152,7 +157,7 @@ docker-compose up -d
 2. VS Code 左下角点击 **`><`** 图标
 3. 选择 **Attach to Running Container**
 4. 选择 **/A1\_Builder**
-5. 新窗口打开后：**File → Open Folder →** **`/home/my_project`**
+5. 新窗口打开后：**File → Open Folder →** **`/workspace/project`**
 
 现在 VS Code 的编辑器和底部终端**都在容器环境内**，可以直接编译运行。
 
@@ -165,7 +170,7 @@ git pull
 # ② 用 VS Code（连接容器后）写代码，保存即实时同步到容器
 
 # ③ 在容器内终端编译运行
-cd /home/my_project
+cd /workspace/project
 make                        # 或 python src/main.py，取决于项目
 
 # ④ 完成后提交（在宿主机 Git 提交）

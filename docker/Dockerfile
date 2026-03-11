@@ -22,5 +22,5 @@ RUN pip install -r /tmp/requirements.txt 2>/dev/null || \
 
 # 环境变量
 ENV PYTHONPATH=/workspace/project/src
-ENV A1_SDK_PATH=/home/smartsens_flying_chip_a1_sdk
+ENV A1_SDK_PATH=/workspace/A1_Builder/smartsens_sdk
 ENV PYTHONUNBUFFERED=1

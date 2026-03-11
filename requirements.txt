@@ -14,8 +14,8 @@ scipy>=1.10.0
 # --- Depth Estimation ---
 # Using MiDaS or lightweight depth models
 timm>=0.9.0
-torch>=2.0.0
-torchvision>=0.15.0
+torch>=2.0.0+cpu
+torchvision>=0.15.0+cpu
 
 # --- Point Cloud & Visualization ---
 open3d>=0.17.0
