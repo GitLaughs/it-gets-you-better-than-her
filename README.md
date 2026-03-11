@@ -97,14 +97,14 @@ cd ..
 ```powershell
 # Windows PowerShell — 使用绝对路径（./相对路径在 Windows 下可能失效）
 docker run -itd --name A1_Builder `
-  -v "${PWD}\data:/workspace/A1_Builder/smartsens_sdk" `
-  -v "${PWD}\src:/workspace/project" `
+  -v "${PWD}\data:/app/smartsens_sdk" `
+  -v "${PWD}\src:/app/src" `
   a1-sdk-builder
 
 # 验证挂载是否成功
 docker exec -it A1_Builder /bin/bash
-ls /workspace/project                      # 应看到 src/ 下的代码
-ls /workspace/A1_Builder/smartsens_sdk    # 应看到 a1_sdk_sc132gs/
+ls /app/src                      # 应看到 src/ 下的代码
+ls /app/smartsens_sdk            # 应看到 a1_sdk_sc132gs/
 exit
 
 #或者
@@ -114,7 +114,7 @@ docker-compose up -d
 ```
 
 > **路径说明：**
-> Windows 的 `E:\...\src` → 容器内的 `/workspace/project`（实时双向同步，不是拷贝）
+> Windows 的 `E:\...\src` → 容器内的 `/app/src`（实时双向同步，不是拷贝）
 
 ***
 
@@ -131,11 +131,10 @@ docker-compose up -d
           ▼
 ┌───────────────────────────┐
 │ 容器: A1_Builder          │  ← 运行中
-│  /workspace/project/      │  ← 挂载自 src/（你的代码）
-│  /workspace/A1_Builder/   │
-│    ├── smartsens_sdk/     │  ← 挂载自 data/（官方SDK）
-│    ├── models/            │  ← 挂载自 models/（模型）
-│    └── output/            │  ← 挂载自 output/（输出）
+│  /app/src/               │  ← 挂载自 src/（你的代码）
+│  /app/smartsens_sdk/     │  ← 挂载自 data/（官方SDK）
+│  /app/models/            │  ← 挂载自 models/（模型）
+│  /app/output/            │  ← 挂载自 output/（输出）
 └───────────────────────────┘
           ↕ 实时同步（非拷贝）
 ┌───────────────────────────┐
@@ -157,7 +156,7 @@ docker-compose up -d
 2. VS Code 左下角点击 **`><`** 图标
 3. 选择 **Attach to Running Container**
 4. 选择 **/A1\_Builder**
-5. 新窗口打开后：**File → Open Folder →** **`/workspace/project`**
+5. 新窗口打开后：**File → Open Folder →** **`/app/src`**
 
 现在 VS Code 的编辑器和底部终端**都在容器环境内**，可以直接编译运行。
 
@@ -170,8 +169,8 @@ git pull
 # ② 用 VS Code（连接容器后）写代码，保存即实时同步到容器
 
 # ③ 在容器内终端编译运行
-cd /workspace/project
-make                        # 或 python src/main.py，取决于项目
+cd /app/src
+make                        # 或 python main.py，取决于项目
 
 # ④ 完成后提交（在宿主机 Git 提交）
 git add .
@@ -187,6 +186,55 @@ docker stop A1_Builder           # 停止容器
 docker exec -it A1_Builder bash  # 进入正在运行的容器
 docker ps                        # 查看运行中的容器
 docker ps -a                     # 查看所有容器（含已停止）
+```
+
+***
+
+## 🚀 如何在 Docker 里运行（完整步骤）
+
+### 1. 进入项目目录
+```bash
+cd it-gets-you-better-than-her
+```
+
+### 2. 创建 .env 文件（填入你的 Discord Bot Token）
+```bash
+cp .env.example .env
+# 然后编辑 .env，把 your_discord_token_here 替换为真实 token
+nano .env   # 或用任何编辑器
+```
+
+### 3. 构建并启动（首次运行）
+```bash
+docker-compose up -d --build
+```
+
+### 4. 查看日志（确认 bot 正常运行）
+```bash
+docker-compose logs -f
+```
+
+### 5. 停止
+```bash
+docker-compose down
+```
+
+### 日常开发流程（编辑代码后）
+```bash
+# 修改了 src/ 里的代码后，只需重启容器（不需要重新 build）
+docker-compose restart
+
+# 如果修改了 requirements.txt（加了新依赖），才需要重新 build
+docker-compose up -d --build
+```
+
+### 常用命令速查
+```bash
+docker-compose logs -f       # 实时看日志
+docker-compose ps            # 查看容器状态
+docker-compose down          # 停止并删除容器
+docker-compose restart       # 重启容器
+docker-compose up -d --build # 重新构建并启动
 ```
 
 ***

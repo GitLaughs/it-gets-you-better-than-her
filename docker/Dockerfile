@@ -11,16 +11,21 @@
 # 以官方导入的镜像为基础
 FROM a1-sdk-builder:latest
 
-# 设置工作目录
-WORKDIR /workspace/project
+WORKDIR /app
 
-# 安装项目 Python 依赖（如果容器里有 pip）
-COPY requirements.txt /tmp/requirements.txt
-RUN pip install -r /tmp/requirements.txt 2>/dev/null || \
-    pip3 install -r /tmp/requirements.txt 2>/dev/null || \
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt 2>/dev/null || \
+    pip3 install --no-cache-dir -r requirements.txt 2>/dev/null || \
     echo "WARNING: pip not found, skip python deps"
 
+COPY src/ ./src/
+
+WORKDIR /app/src
+
 # 环境变量
-ENV PYTHONPATH=/workspace/project/src
-ENV A1_SDK_PATH=/workspace/A1_Builder/smartsens_sdk
+ENV PYTHONPATH=/app/src
+ENV A1_SDK_PATH=/app/smartsens_sdk
 ENV PYTHONUNBUFFERED=1
+
+CMD ["python", "main.py"]

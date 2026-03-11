@@ -2,19 +2,20 @@ version: '3.8'
 
 services:
   dev:
+    build: .
     image: a1-sdk-builder
     container_name: A1_Builder
     stdin_open: true    # -i
     tty: true           # -t
     volumes:
       # 挂载 SDK 数据
-      - ../data:/workspace/A1_Builder/smartsens_sdk
+      - ../data:/app/smartsens_sdk
       # 挂载 src 目录
-      - ../src:/workspace/project
+      - ../src:/app/src
       # 挂载模型目录
-      - ../models:/workspace/A1_Builder/models
+      - ../models:/app/models
       # 挂载输出目录
-      - ../output:/workspace/A1_Builder/output
-    working_dir: /workspace/project
+      - ../output:/app/output
+    working_dir: /app/src
     # 如有需要，指定 entrypoint
-    # entrypoint: /home/my_project/docker/entrypoint.sh
+    # entrypoint: /app/src/docker/entrypoint.sh
