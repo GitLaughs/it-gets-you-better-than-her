@@ -2,8 +2,8 @@
 
 > A1 Vision Pi 端侧智能视觉系统 — 基于思特威SC132GS + 飞凌微A1开发套件
 
-[!\[GitHub Issues\](https://img.shields.io/github/issues/GitLaughs/it-gets-you-better-than-her null)](https://github.com/GitLaughs/it-gets-you-better-than-her/issues)
-[!\[Docker\](https://img.shields.io/badge/Docker-Supported-blue null)](./docker/)
+[![GitHub Issues](https://img.shields.io/github/issues/GitLaughs/it-gets-you-better-than-her)](https://github.com/GitLaughs/it-gets-you-better-than-her/issues)
+[![Docker](https://img.shields.io/badge/Docker-Supported-blue)](./docker/)
 
 ***
 
