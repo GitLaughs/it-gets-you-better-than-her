@@ -1,1 +1,0 @@
-"""Point cloud module — 3D reconstruction and visualization."""

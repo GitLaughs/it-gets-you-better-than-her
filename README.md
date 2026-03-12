@@ -28,12 +28,32 @@
 ```
 it-gets-you-better-than-her/         ← GitHub 仓库根目录
 ├── src/                             ← ✅ 项目源代码（git 管理）
-├── tests/                           ← ✅ 测试代码（git 管理）
+│   ├── scripts/                     ← 构建和刷写脚本
+│   │   ├── build.sh                 ← 编译脚本
+│   │   └── flash.sh                 ← 刷写脚本
+│   ├── src/                         ← 核心源代码
+│   │   ├── config/                  ← 配置管理
+│   │   ├── core/                    ← 核心功能模块
+│   │   ├── utils/                   ← 工具类
+│   │   └── main.cpp                 ← 主入口
+│   ├── tests/                       ← 单元测试
+│   ├── CMakeLists.txt               ← CMake 构建配置
+│   ├── Makefile                     ← Make 构建配置
+│   └── config.yaml                  ← 系统配置文件
+├── tests/                           ← 集成测试（git 管理）
 ├── docker/                          ← ✅ Docker 配置（git 管理）
 │   ├── Dockerfile
-│   └── docker-compose.yml
+│   ├── docker-compose.yml
+│   └── entrypoint.sh
+├── docs/                            ← 文档（git 管理）
+│   └── windows_docker_dev_guide.md  ← Windows Docker 开发指南
+├── models/                          ← 模型目录（git 管理）
+├── scripts/                         ← 辅助脚本（git 管理）
+├── .devcontainer/                   ← VS Code 开发容器配置
+├── .github/                         ← GitHub 配置
 ├── .gitignore
 ├── README.md
+├── requirements.txt                 ← Python 依赖（如需）
 │
 ├── a1-sdk-builder-latest.tar        ← ❌ 不提交（需手动分发，见下方说明）
 └── data/                            ← ❌ 不提交（.gitignore 已排除）
@@ -41,10 +61,11 @@ it-gets-you-better-than-her/         ← GitHub 仓库根目录
 ```
 
 > **说明：**
->
+> 
 > - `data/` 是 Docker 的挂载点，存放官方 SDK，体积大且属于第三方，不放入 Git
 > - `a1-sdk-builder-latest.tar` 是 Docker 镜像文件，需通过网盘或内网单独分发
 > - `src/` 下的所有代码实时同步到容器内，无需手动复制
+> - `models/` 目录用于存放模型文件（如 YOLOv8、Midas 等）
 
 ***
 
@@ -146,6 +167,22 @@ docker-compose up -d
 └───────────────────────────┘
 ```
 
+### 构建命令
+
+```bash
+# 在容器内编译视觉系统
+cd /app/src
+
+# 使用 Makefile 构建
+./scripts/build.sh --type release
+
+# 或使用 CMake 构建
+./scripts/build.sh --cmake --type release
+
+# 刷写到目标设备
+./scripts/flash.sh --host 192.168.1.100 --method ssh
+```
+
 ***
 
 ## 💻 日常开发流程（VS Code + Dev Containers）
@@ -170,7 +207,13 @@ git pull
 
 # ③ 在容器内终端编译运行
 cd /app/src
-make                        # 或 python main.py，取决于项目
+./scripts/build.sh --type release  # 编译
+
+# 运行测试
+cd /app/src
+./tests/test_config                   # 运行配置测试
+./tests/test_obstacle                 # 运行避障测试
+./tests/test_tracker                  # 运行跟踪测试
 
 # ④ 完成后提交（在宿主机 Git 提交）
 git add .
@@ -241,11 +284,11 @@ docker-compose up -d --build # 重新构建并启动
 
 ## 👥 团队分工
 
-| 成员  | 负责模块                   | 分支                             |
-| --- | ---------------------- | ------------------------------ |
-| 成员A | 检测 + 跟踪 + 摄像头管理        | `feature/perception-pipeline`  |
-| 成员B | 深度 + 点云 + 定位 + 导航      | `feature/spatial-intelligence` |
-| 成员C | 显示 + 灵巧手 + 系统集成 + 异常处理 | `feature/system-integration`   |
+| 角色  | 成员  | 负责模块                   | 分支                             |
+| --- | --- | ---------------------- | ------------------------------ |
+| **队长** | 成员A | 核心系统架构 + 检测 + 跟踪 + 摄像头管理 + 系统集成 | `feature/core-system`           |
+| 队友  | 成员B | 深度估计 + 点云处理 + 定位导航 + 避障算法 | `feature/spatial-intelligence` |
+| 队友  | 成员C | 视频输出 + 灵巧手接口 + HDR控制 + 异常处理 | `feature/peripheral-integration` |
 
 ### 分支协作规范
 
@@ -257,6 +300,11 @@ git checkout -b feature/你的功能名
 
 # 开发完成后，推送并在 GitHub 发起 Pull Request
 git push origin feature/你的功能名
+
+# 代码审查流程
+# 1. 队长负责审查所有 PR
+# 2. 合并到 main 分支前需队长批准
+# 3. 定期同步 main 分支到各自 feature 分支
 ```
 
 ***

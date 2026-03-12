@@ -1,0 +1,121 @@
+# ============================================================
+# Embedded Vision System Configuration
+# Target: OV5640 camera on embedded Linux (FPGA/SoC)
+# ============================================================
+
+# Camera settings
+camera:
+  device: /dev/video0
+  width: 1280
+  height: 720
+  fps: 90
+  format: GREY
+  focal_length_px: 600.0
+  fov_h: 49.7
+  fov_v: 37.8
+  auto_exposure: true
+  exposure_us: 10000
+  gain_db: 0
+  flip_horizontal: false
+  flip_vertical: false
+
+# HDR controller
+hdr:
+  enabled: true
+  mode: software
+  num_exposures: 3
+  exposure_short_us: 2000
+  exposure_mid_us: 10000
+  exposure_long_us: 40000
+  tone_map_gamma: 0.6
+  ghost_threshold: 30
+
+# Object detector (YOLOv8)
+detector:
+  model: /opt/vision/models/yolov8n.onnx
+  input_size: 320
+  conf_threshold: 0.5
+  nms_threshold: 0.45
+  threads: 2
+  classes: 80
+  quantized: false
+
+# Depth estimator
+depth:
+  model: /opt/vision/models/midas_small.onnx
+  input_size: 256
+  min_depth: 0.1
+  max_depth: 10.0
+  threads: 2
+
+# Object tracker
+tracker:
+  max_age: 15
+  min_hits: 3
+  iou_threshold: 0.3
+  max_tracks: 50
+  history_len: 30
+
+# Obstacle avoidance
+obstacle:
+  critical_dist: 0.3
+  danger_dist: 0.8
+  warning_dist: 1.5
+  safe_dist: 3.0
+  max_linear_speed: 0.5
+  max_angular_speed: 1.0
+  sector_count: 36
+
+# Point cloud
+pointcloud:
+  downsample_step: 8
+  max_points: 30000
+  voxel_size: 0.05
+  export_dir: /tmp/pointcloud
+
+# Visual odometry / position estimation
+position:
+  baseline_estimate: 0.1
+  max_features: 150
+  match_threshold: 0.7
+  history_size: 500
+
+# Hand / gripper interface
+hand:
+  serial_port: ""
+  baudrate: 115200
+  auto_grip_threshold: 0.3
+
+# Video output
+output:
+  mode: serial
+  path: /dev/ttyS1
+  fps: 30
+  overlay: true
+  downsample_width: 160
+  downsample_height: 90
+
+# Feature toggles
+features:
+  detection: true
+  depth: true
+  tracking: true
+  obstacle_avoidance: true
+  point_cloud: true
+  position_estimation: true
+  hand_control: false
+  video_output: true
+
+# Logging
+logging:
+  level: 2
+  file: /var/log/vision_system.log
+  max_size_mb: 4
+  console: true
+
+# System
+system:
+  watchdog_timeout_s: 30
+  max_memory_mb: 256
+  process_priority: -10
+  cpu_affinity: 0x03
