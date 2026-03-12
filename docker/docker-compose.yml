@@ -17,5 +17,7 @@ services:
       # 挂载输出目录
       - ../output:/app/output
     working_dir: /app/src
+    ports:
+      - "8080:8080"
     # 如有需要，指定 entrypoint
     # entrypoint: /app/src/docker/entrypoint.sh
