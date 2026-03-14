@@ -335,3 +335,126 @@ git push origin feature/你的功能名
 ## 📄 License
 
 MIT License
+
+***
+
+## 🐙 GitHub CLI 指南
+
+### 什么是 GitHub CLI？
+
+GitHub CLI 是 GitHub 官方提供的命令行工具，允许你直接从终端与 GitHub 交互，无需打开浏览器。它可以帮助你更高效地管理仓库、创建 issues、提交 pull requests 等。
+
+### 安装 GitHub CLI
+
+#### Windows
+
+1. 访问 [GitHub CLI 官方下载页面](https://cli.github.com/download/)
+2. 下载并安装 Windows 版本
+3. 验证安装：
+   ```powershell
+   gh --version
+   ```
+
+#### 在 Docker 容器中
+
+本项目的 Docker 镜像已包含 GitHub CLI，你可以直接在容器内使用。
+
+### 登录 GitHub
+
+#### 在 Windows 中
+
+```powershell
+# 打开 GitHub CLI 终端
+E:\it-gets-you-better-than-her\scripts\open_github_cli.bat
+
+# 然后执行登录命令
+gh auth login
+```
+
+#### 在 Docker 容器中
+
+```bash
+# 进入容器
+docker exec -it A1_Builder bash
+
+# 执行登录命令
+gh auth login
+```
+
+### 常用 GitHub CLI 命令
+
+#### 仓库操作
+
+```bash
+# 查看当前仓库信息
+gh repo view
+
+# 克隆仓库
+gh repo clone owner/repo
+```
+
+#### Issues 管理
+
+```bash
+# 创建新 issue
+gh issue create
+
+# 查看 issue 列表
+gh issue list
+
+# 查看特定 issue
+gh issue view ISSUE_NUMBER
+```
+
+#### Pull Requests 管理
+
+```bash
+# 创建新 PR
+gh pr create
+
+# 查看 PR 列表
+gh pr list
+
+# 检查 PR
+gh pr checkout PR_NUMBER
+```
+
+### 使用自然语言描述 Bug 修复
+
+GitHub CLI 支持使用自然语言描述来创建 issues 和 PRs，这使得描述 bug 修复更加直观和高效。
+
+#### 示例：创建一个关于 bug 修复的 issue
+
+```bash
+gh issue create --title "修复避障算法中的边界情况" --body "当障碍物距离小于0.5米时，避障算法会出现误判，需要修复这个边界情况。"
+```
+
+#### 示例：创建一个包含 bug 修复的 PR
+
+```bash
+gh pr create --title "fix: 解决避障算法边界情况问题" --body "- 修复了障碍物距离小于0.5米时的误判问题
+- 优化了距离计算逻辑
+- 添加了边界情况的单元测试"
+```
+
+### 一键启动脚本
+
+本项目提供了一个 Windows 下的一键启动脚本，用于在 src 目录下打开 GitHub CLI 终端：
+
+```powershell
+# 运行脚本
+E:\it-gets-you-better-than-her\scripts\open_github_cli.bat
+```
+
+脚本会自动导航到 src 目录，检查 GitHub CLI 是否安装，并显示常用命令示例。
+
+### 集成到开发流程
+
+在日常开发中，你可以使用 GitHub CLI 来：
+
+1. **快速创建 issues**：当发现 bug 或需要新功能时
+2. **管理 PRs**：创建、查看和合并 pull requests
+3. **同步仓库**：拉取最新代码，推送本地更改
+4. **查看仓库状态**：了解当前仓库的最新动态
+
+通过 GitHub CLI，你可以更高效地与 GitHub 交互，减少在浏览器和终端之间切换的次数，提高开发效率。
