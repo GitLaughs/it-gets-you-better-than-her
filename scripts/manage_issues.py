@@ -34,11 +34,33 @@ REPO = "GitLaughs/it-gets-you-better-than-her"
 API_BASE = f"https://api.github.com/repos/{REPO}"
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 团队成员 GitHub 用户名（根据实际情况修改）
+# 团队成员 GitHub 用户名（根据实际情况修改，或通过环境变量覆盖）
+# 也可设置环境变量：MEMBER_A_USERNAME, MEMBER_B_USERNAME, MEMBER_C_USERNAME
 # ═══════════════════════════════════════════════════════════════════════════
-MEMBER_A = "MemberA"   # 队长：核心架构 + 检测 + 跟踪 + 摄像头管理 + 系统集成
-MEMBER_B = "MemberB"   # 队友B：深度估计 + 点云 + 定位导航 + 避障算法
-MEMBER_C = "MemberC"   # 队友C：视频输出 + 灵巧手 + HDR控制 + 异常处理
+_DEFAULT_PLACEHOLDER = True   # 标记是否仍在使用占位符
+MEMBER_A = os.environ.get("MEMBER_A_USERNAME", "MemberA")   # 队长：核心架构 + 检测 + 跟踪 + 摄像头管理 + 系统集成
+MEMBER_B = os.environ.get("MEMBER_B_USERNAME", "MemberB")   # 队友B：深度估计 + 点云 + 定位导航 + 避障算法
+MEMBER_C = os.environ.get("MEMBER_C_USERNAME", "MemberC")   # 队友C：视频输出 + 灵巧手 + HDR控制 + 异常处理
+
+
+def _check_placeholder_usernames():
+    """检查是否仍在使用占位符用户名，若是则给出警告。"""
+    placeholders = []
+    if MEMBER_A == "MemberA":
+        placeholders.append(f"  MEMBER_A_USERNAME 未设置（当前值: '{MEMBER_A}'）")
+    if MEMBER_B == "MemberB":
+        placeholders.append(f"  MEMBER_B_USERNAME 未设置（当前值: '{MEMBER_B}'）")
+    if MEMBER_C == "MemberC":
+        placeholders.append(f"  MEMBER_C_USERNAME 未设置（当前值: '{MEMBER_C}'）")
+    if placeholders:
+        print("⚠️  警告：以下成员用户名仍为占位符，Issues 将无法正确指派：")
+        for p in placeholders:
+            print(p)
+        print("  解决方法（三选一）：")
+        print("    1. 修改本脚本顶部 MEMBER_A/B/C 的默认值")
+        print("    2. 设置环境变量: export MEMBER_A_USERNAME=实际用户名")
+        print("    3. 继续运行（assignees 字段将留空，Issues 不会自动指派）")
+        print()
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -746,14 +768,20 @@ def make_request(method, path, data=None, token=None):
     body = json.dumps(data).encode("utf-8") if data else None
     req = urllib.request.Request(url, data=body, headers=headers, method=method)
 
-    # 尝试使用本地代理（Windows 开发环境）
+    # 代理列表：优先使用环境变量中指定的代理，然后尝试常见本地代理地址
+    env_proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("HTTP_PROXY")
     proxies = [
-        None,
-        "http://127.0.0.1:7897",
-        "http://127.0.0.1:1080",
+        (None, "直连"),
+        (env_proxy, f"环境变量代理 ({env_proxy})") if env_proxy else (None, None),
+        ("http://127.0.0.1:7897", "本地代理 127.0.0.1:7897"),
+        ("http://127.0.0.1:1080", "本地代理 127.0.0.1:1080"),
     ]
+    proxies = [(p, desc) for p, desc in proxies if p is not None or desc == "直连"]
 
-    for proxy in proxies:
+    last_errors = []
+    for proxy, desc in proxies:
+        if desc is None:
+            continue
         try:
             if proxy:
                 proxy_handler = urllib.request.ProxyHandler(
@@ -767,10 +795,14 @@ def make_request(method, path, data=None, token=None):
             return json.loads(resp.read().decode())
         except urllib.error.HTTPError as e:
             raise e
-        except (urllib.error.URLError, OSError):
+        except (urllib.error.URLError, OSError) as e:
+            last_errors.append(f"{desc}: {e}")
             continue
 
-    raise urllib.error.URLError("所有网络路径均无法连接 GitHub API")
+    tried = "; ".join(last_errors)
+    raise urllib.error.URLError(
+        f"所有网络路径均无法连接 GitHub API。尝试过的路径：[{tried}]"
+    )
 
 
 def close_bug_issues(token, dry_run=False):
@@ -879,6 +911,8 @@ def main():
         print("错误: 请设置环境变量 GITHUB_TOKEN")
         print("  export GITHUB_TOKEN='ghp_xxxxxxx'")
         sys.exit(1)
+
+    _check_placeholder_usernames()
 
     if args.dry_run:
         print("⚠️  DRY-RUN 模式：不会实际修改 GitHub")
