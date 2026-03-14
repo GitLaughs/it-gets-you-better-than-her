@@ -82,11 +82,21 @@ bool VisionSystem::initialize(const std::string& configFile) {
     enableHand_ = config_->getBool("features.hand_control", false);
     enableVideoOut_ = config_->getBool("features.video_output", true);
 
+    // Initialize HDR controller
+    hdrController_.init(
+        config_->getFloat("hdr.brightness_low", 30.0f),
+        config_->getFloat("hdr.brightness_high", 220.0f),
+        config_->getFloat("hdr.variance_threshold", 40.0f),
+        config_->getInt("hdr.cooldown_ms", 2000),
+        config_->getFloat("hdr.clahe_clip", 3.0f),
+        config_->getInt("hdr.clahe_grid", 8),
+        config_->getString("hdr.mode", "auto"));
+
     // Initialize Camera
     camera_ = std::make_shared<CameraManager>();
     if (!camera_->initialize(camDevice, camWidth, camHeight, camFps)) {
         LOG_E(MOD, "Camera initialization failed!");
-        ExceptionHandler::instance().handleCameraError("Camera init failed");
+        ExceptionHandler::instance().handle("camera_init_failed", "Camera init failed", "camera");
         return false;
     }
     LOG_I(MOD, "Camera initialized: %dx%d @%dfps", camWidth, camHeight, camFps);
@@ -101,9 +111,11 @@ bool VisionSystem::initialize(const std::string& configFile) {
 
     // Initialize YOLOv8 Detector
     if (enableDetection_) {
-        detector_ = std::make_shared<YoloV8Detector>();
-        if (!detector_->initialize(detectorModel, detInputSize,
-                                    detConfThresh, detNmsThresh, detThreads)) {
+        detector_ = std::make_shared<YOLOv8Detector>();
+        if (!detector_->initialize(detectorModel, detInputSize, detInputSize,
+                                    detConfThresh, detNmsThresh,
+                                    config_->getInt("detector.max_det", 50),
+                                    detThreads)) {
             LOG_W(MOD, "Detector init failed, detection disabled");
             enableDetection_ = false;
         } else {
@@ -257,10 +269,10 @@ void VisionSystem::captureLoop() {
 
         auto t0 = std::chrono::steady_clock::now();
 
-        bool ok = camera_->captureFrame(buf.data.data(),
-                                         buf.data.size());
+        FrameInfo frameInfo;
+        bool ok = camera_->getFrame(buf.data.data(), frameInfo);
         if (!ok) {
-            ExceptionHandler::instance().handleCameraError("Capture failed");
+            ExceptionHandler::instance().handle("capture_failed", "Capture failed", "camera");
             // Attempt recovery
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             camera_->release();
@@ -276,13 +288,23 @@ void VisionSystem::captureLoop() {
         auto t1 = std::chrono::steady_clock::now();
         float captureMs = std::chrono::duration<float, std::milli>(t1 - t0).count();
 
-        buf.timestampMs = std::chrono::duration_cast<std::chrono::milliseconds>(
-            t1.time_since_epoch()).count();
+        // Prefer the camera driver's own timestamp when available; fall back
+        // to the wall-clock time measured above.
+        if (frameInfo.timestamp > 0.0) {
+            buf.timestampMs = static_cast<uint64_t>(frameInfo.timestamp * 1000.0);
+        } else {
+            buf.timestampMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                t1.time_since_epoch()).count();
+        }
         buf.ready = true;
 
-        // Swap buffers
-        writeIdx_.store(1 - idx);
-        readIdx_.store(idx);
+        // Swap buffers atomically under frameMu_ to prevent a race between
+        // the two separate atomic stores being visible individually.
+        {
+            std::lock_guard<std::mutex> lk(frameMu_);
+            writeIdx_.store(1 - idx);
+            readIdx_.store(idx);
+        }
 
         {
             std::lock_guard<std::mutex> lk(statsMu_);
@@ -311,7 +333,11 @@ void VisionSystem::processLoop() {
     int fpsCount = 0;
 
     while (running_) {
-        int idx = readIdx_.load();
+        int idx;
+        {
+            std::lock_guard<std::mutex> lk(frameMu_);
+            idx = readIdx_.load();
+        }
         auto& buf = captureBuffer_[idx];
 
         if (!buf.ready) {
@@ -322,13 +348,15 @@ void VisionSystem::processLoop() {
         auto t0 = std::chrono::steady_clock::now();
 
         try {
-            const uint8_t* frame = buf.data.data();
+            uint8_t* frameMutable = buf.data.data();
             int w = buf.width;
             int h = buf.height;
             uint64_t ts = buf.timestampMs;
 
-            // HDR adaptation
-            adaptHDR(frame, w, h);
+            // HDR adaptation (may modify frame in-place)
+            adaptHDR(frameMutable, w, h);
+
+            const uint8_t* frame = frameMutable;
 
             // Pipeline stages
             if (enableDetection_) runDetection(frame, w, h);
@@ -385,9 +413,18 @@ void VisionSystem::processLoop() {
 void VisionSystem::runDetection(const uint8_t* frame, int w, int h) {
     auto t0 = std::chrono::steady_clock::now();
 
+    // YOLOv8 detect returns std::vector<Detection>; convert to BBox for tracker
+    auto rawDets = detector_->detect(frame, w, h);
     std::vector<BBox> detections;
-    // YOLOv8 expects the frame; our detector handles grayscale→3ch inside
-    detector_->detect(frame, w, h, detections);
+    detections.reserve(rawDets.size());
+    for (const auto& d : rawDets) {
+        BBox b;
+        b.x1 = d.x1; b.y1 = d.y1; b.x2 = d.x2; b.y2 = d.y2;
+        b.confidence = d.confidence;
+        b.classId = d.classId;
+        b.label = d.className;
+        detections.push_back(b);
+    }
 
     {
         std::lock_guard<std::mutex> lk(resultMu_);
@@ -604,24 +641,9 @@ void VisionSystem::runVideoOutput(const uint8_t* frame, int w, int h,
     }
 }
 
-void VisionSystem::adaptHDR(const uint8_t* frame, int w, int h) {
-    // Compute average brightness for HDR / auto-exposure adaptation
-    // Sample every 32nd pixel
-    int sum = 0, count = 0;
-    for (int i = 0; i < w * h; i += 32) {
-        sum += frame[i];
-        count++;
-    }
-    float avgBrightness = (count > 0) ? (float)sum / count : 128.0f;
-
-    // Auto-exposure hint: if too dark or too bright, adjust
-    // This would interface with the HDR controller
-    if (avgBrightness < 30.0f) {
-        // Very dark scene: increase exposure
-        LOG_D(MOD, "Dark scene detected: avg=%.0f", avgBrightness);
-    } else if (avgBrightness > 220.0f) {
-        // Very bright: decrease exposure
-        LOG_D(MOD, "Bright scene detected: avg=%.0f", avgBrightness);
+void VisionSystem::adaptHDR(uint8_t* frame, int w, int h) {
+    if (hdrController_.shouldEnableHDR(frame, w, h)) {
+        hdrController_.processFrame(frame, w, h);
     }
 }
 
@@ -659,11 +681,13 @@ void VisionSystem::checkResources() {
     // Resource alerts
     if (mem > 200.0f) {
         LOG_W(MOD, "High memory usage: %.1f MB", mem);
-        ExceptionHandler::instance().handleResourceWarning("memory", mem);
+        ExceptionHandler::instance().handle("high_memory", "High memory usage", "system",
+                                             Severity::SEV_WARNING);
     }
     if (cpu > 95.0f) {
         LOG_W(MOD, "High CPU usage: %.1f%%", cpu);
-        ExceptionHandler::instance().handleResourceWarning("cpu", cpu);
+        ExceptionHandler::instance().handle("high_cpu", "High CPU usage", "system",
+                                             Severity::SEV_WARNING);
     }
 }
 

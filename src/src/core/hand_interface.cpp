@@ -216,9 +216,8 @@ void HandInterface::commLoop() {
         }
 
         // Periodic state query
-        static int queryCount = 0;
-        if (++queryCount >= 20) { // ~every 200ms
-            queryCount = 0;
+        if (++queryCount_ >= 20) { // ~every 200ms
+            queryCount_ = 0;
             HandCommand query;
             query.cmdType = 0x04; // query
             query.fingerId = 0xFF;
@@ -241,10 +240,16 @@ void HandInterface::commLoop() {
                 }
             }
 
-            if (stateCallback_) {
+            // Copy callback and state under the lock, then invoke outside
+            // the lock to avoid holding it during a potentially blocking call.
+            StateCallback cb;
+            HandState stateCopy;
+            {
                 std::lock_guard<std::mutex> lk(stateMu_);
-                stateCallback_(state_);
+                cb = stateCallback_;
+                stateCopy = state_;
             }
+            if (cb) cb(stateCopy);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -362,6 +367,7 @@ bool HandInterface::autoGrip(float targetDistance, float gripThreshold) {
 }
 
 void HandInterface::setStateCallback(StateCallback cb) {
+    std::lock_guard<std::mutex> lk(stateMu_);
     stateCallback_ = std::move(cb);
 }
 

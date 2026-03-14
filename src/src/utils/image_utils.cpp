@@ -16,8 +16,8 @@ namespace ImageUtils {
 
 void resizeBilinear(const uint8_t* src, int srcW, int srcH,
                     uint8_t* dst, int dstW, int dstH) {
-    float xRatio = (float)(srcW - 1) / (dstW - 1);
-    float yRatio = (float)(srcH - 1) / (dstH - 1);
+    float xRatio = (dstW > 1) ? (float)(srcW - 1) / (dstW - 1) : 0.0f;
+    float yRatio = (dstH > 1) ? (float)(srcH - 1) / (dstH - 1) : 0.0f;
 
     for (int dy = 0; dy < dstH; ++dy) {
         float fy = dy * yRatio;
@@ -248,9 +248,17 @@ void bilateralFilter(const uint8_t* src, uint8_t* dst, int width, int height,
         }
     }
 
-    // Copy border
+    // Copy border rows
     for (int y = 0; y < radius; ++y) memcpy(dst + y*width, src + y*width, width);
     for (int y = height-radius; y < height; ++y) memcpy(dst + y*width, src + y*width, width);
+
+    // Copy border columns (left and right)
+    for (int y = radius; y < height - radius; ++y) {
+        for (int x = 0; x < radius; ++x) {
+            dst[y*width + x] = src[y*width + x];
+            dst[y*width + width-1-x] = src[y*width + width-1-x];
+        }
+    }
 }
 
 void sobelX(const uint8_t* src, int16_t* dst, int width, int height) {
@@ -515,11 +523,7 @@ uint8_t otsuThreshold(const uint8_t* img, int width, int height) {
 
 void adaptiveThreshold(const uint8_t* src, uint8_t* dst,
                        int width, int height, int blockSize, int C) {
-    // Use integral image for fast block mean computation
-    std::vector<uint32_t> integral((width + 1) * (height + 1), 0);
-    computeIntegralImage(src, integral.data() + width + 2, width, height);
-
-    // Rebuild proper integral with padding
+    // Build integral image with padding (single pass, no redundant computation)
     std::vector<uint32_t> intImg((width + 1) * (height + 1), 0);
     for (int y = 1; y <= height; ++y) {
         for (int x = 1; x <= width; ++x) {

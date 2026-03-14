@@ -146,8 +146,8 @@ void PointCloudGenerator::voxelDownsample(std::vector<Point3D>& points,
     }
 }
 
-const std::vector<Point3D>& PointCloudGenerator::getPoints() const {
-    // Note: caller should use mutex or copy if needed across threads
+std::vector<Point3D> PointCloudGenerator::getPoints() const {
+    std::lock_guard<std::mutex> lk(mu_);
     return points_;
 }
 

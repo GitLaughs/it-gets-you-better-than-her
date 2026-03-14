@@ -29,7 +29,7 @@ public:
                   int width, int height);
 
     // Get current point cloud
-    const std::vector<Point3D>& getPoints() const;
+    std::vector<Point3D> getPoints() const;
     int getPointCount() const;
 
     // Get points within radius of a 3D position

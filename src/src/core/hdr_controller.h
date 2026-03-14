@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include <atomic>
 #include <cmath>
 
 enum class HDRMode {
@@ -25,7 +26,7 @@ public:
     // Apply HDR processing (in-place)
     void processFrame(uint8_t* frame, int width, int height);
 
-    bool isActive() const { return active_; }
+    bool isActive() const { return active_.load(); }
     HDRMode getMode() const { return mode_; }
 
     struct Status {
@@ -35,7 +36,6 @@ public:
         int historyLen;
     };
     Status getStatus() const;
-
     void reset();
 
 private:
@@ -51,7 +51,7 @@ private:
 
     HDRMode mode_ = HDRMode::AUTO;
     bool enabled_ = true;
-    bool active_ = false;
+    std::atomic<bool> active_{false};
 
     float brightnessLow_ = 30.0f;
     float brightnessHigh_ = 220.0f;
@@ -60,7 +60,7 @@ private:
     float claheClip_ = 3.0f;
     int claheGrid_ = 8;
 
-    int64_t lastSwitchTimeMs_ = 0;
+    std::atomic<int64_t> lastSwitchTimeMs_{0};
 
     std::vector<float> brightnessHistory_;
     static constexpr int MAX_HISTORY = 60;

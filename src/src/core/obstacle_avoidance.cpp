@@ -7,6 +7,10 @@
 #include <numeric>
 #include <cmath>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 static const char* MOD = "NavOA";
 
 ObstacleAvoidance::ObstacleAvoidance() {}
@@ -209,11 +213,22 @@ float ObstacleAvoidance::findBestDirection() const {
     float bestDist = 0;
     float bestAngle = 0;
 
-    // Use a sliding window of 3 sectors for smoother results
-    for (int i = 1; i < sectorCount_ - 1; ++i) {
-        float avgMin = (sectors_[i-1].minDistance +
-                       sectors_[i].minDistance +
-                       sectors_[i+1].minDistance) / 3.0f;
+    // Use a sliding window of up to 3 sectors for smoother results.
+    // Handle boundary sectors (i==0 and i==sectorCount_-1) with a
+    // reduced window so they are not skipped entirely.
+    for (int i = 0; i < sectorCount_; ++i) {
+        float avgMin;
+        if (sectorCount_ < 3) {
+            avgMin = sectors_[i].minDistance;
+        } else if (i == 0) {
+            avgMin = (sectors_[0].minDistance + sectors_[1].minDistance) / 2.0f;
+        } else if (i == sectorCount_ - 1) {
+            avgMin = (sectors_[i-1].minDistance + sectors_[i].minDistance) / 2.0f;
+        } else {
+            avgMin = (sectors_[i-1].minDistance +
+                      sectors_[i].minDistance +
+                      sectors_[i+1].minDistance) / 3.0f;
+        }
         if (avgMin > bestDist) {
             bestDist = avgMin;
             bestAngle = sectors_[i].angleDeg;

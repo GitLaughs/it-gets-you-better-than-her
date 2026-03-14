@@ -129,7 +129,7 @@ bool ConfigLoader::load(const std::string& filename) {
 
     LOG_I(MOD, "Config loaded: %s (%d entries)", filename_.c_str(), (int)data_.size());
 
-    if (Logger::instance().getLevel() <= 0) {
+    if (Logger::instance().getLevel() <= LogLevel::LOG_DEBUG) {
         dump();
     }
 

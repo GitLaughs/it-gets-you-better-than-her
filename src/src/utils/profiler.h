@@ -76,7 +76,10 @@ private:
 
 // Convenience macros
 #ifdef ENABLE_PROFILING
-    #define PROFILE_SCOPE(name) Profiler::ScopedTimer _timer_##__LINE__(name)
+    // Use two-level macro expansion so __LINE__ is replaced with its value
+    // before token-pasting, preventing variable name collisions on the same line.
+    #define PROFILE_SCOPE_IMPL(name, line) Profiler::ScopedTimer _timer_##line(name)
+    #define PROFILE_SCOPE(name) PROFILE_SCOPE_IMPL(name, __LINE__)
     #define PROFILE_BEGIN(name) Profiler::instance().begin(name)
     #define PROFILE_END(name)   Profiler::instance().end(name)
     #define PROFILE_REPORT()    Profiler::instance().printReport()

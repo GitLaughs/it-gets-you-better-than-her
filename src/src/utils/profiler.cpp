@@ -120,6 +120,7 @@ void Profiler::reset() {
 }
 
 float Profiler::getTotalElapsedMs() const {
+    std::lock_guard<std::mutex> lk(mu_);
     auto now = std::chrono::steady_clock::now();
     return std::chrono::duration<float, std::milli>(now - startupTime_).count();
 }
