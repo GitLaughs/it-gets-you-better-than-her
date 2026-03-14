@@ -9,9 +9,12 @@
 #include <chrono>
 #include <deque>
 
+#include "tracker.h"
+#include "hdr_controller.h"
+
 // Forward declarations
 class CameraManager;
-class YoloV8Detector;
+class YOLOv8Detector;
 class DepthEstimator;
 class Tracker;
 class ObstacleAvoidance;
@@ -87,14 +90,17 @@ private:
     float getMemUsageMB();
 
     // HDR adaptive control
-    void adaptHDR(const uint8_t* frame, int w, int h);
+    void adaptHDR(uint8_t* frame, int w, int h);
 
     // Config
     std::shared_ptr<ConfigLoader> config_;
 
+    // HDR controller
+    HDRController hdrController_;
+
     // Core modules
     std::shared_ptr<CameraManager> camera_;
-    std::shared_ptr<YoloV8Detector> detector_;
+    std::shared_ptr<YOLOv8Detector> detector_;
     std::shared_ptr<DepthEstimator> depth_;
     std::shared_ptr<Tracker> tracker_;
     std::shared_ptr<ObstacleAvoidance> obstacle_;

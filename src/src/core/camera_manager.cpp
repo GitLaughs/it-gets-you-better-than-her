@@ -213,10 +213,19 @@ bool CameraManager::dequeueFrame(uint8_t*& ptr, int& bytesUsed) {
         return false;
     }
 
-    ptr = (uint8_t*)v4l2Buffers_[buf.index].start;
-    bytesUsed = buf.bytesused;
+    // Copy frame data to frameBuffer_ BEFORE re-queuing the buffer to the
+    // kernel, to prevent a use-after-requeue race where the kernel may
+    // overwrite the mmap'd region as soon as VIDIOC_QBUF is called.
+    int copySize = std::min((int)buf.bytesused, width_ * height_);
+    {
+        std::lock_guard<std::mutex> lk(frameMutex_);
+        memcpy(frameBuffer_.data(),
+               (uint8_t*)v4l2Buffers_[buf.index].start, copySize);
+    }
+    ptr = frameBuffer_.data();
+    bytesUsed = copySize;
 
-    // Re-queue buffer
+    // Safe to re-queue now that data has been copied
     if (ioctl(fd_, VIDIOC_QBUF, &buf) < 0) {
         LOG_E(MOD, "VIDIOC_QBUF re-queue failed");
     }
@@ -310,9 +319,8 @@ void CameraManager::captureLoop() {
                 uint8_t* rawPtr = nullptr;
                 int bytesUsed = 0;
                 if (dequeueFrame(rawPtr, bytesUsed)) {
-                    int copySize = std::min(bytesUsed, width_ * height_);
-                    std::lock_guard<std::mutex> lk(frameMutex_);
-                    memcpy(frameBuffer_.data(), rawPtr, copySize);
+                    // dequeueFrame already copied the V4L2 buffer into
+                    // frameBuffer_ before re-queuing, so no copy needed here.
                     gotFrame = true;
                 } else {
                     droppedFrames_++;

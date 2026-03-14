@@ -59,20 +59,6 @@ RecoveryAction ExceptionHandler::handle(const std::string& exType,
 
     std::string key = module + ":" + exType;
 
-    // Cooldown check
-    if (rule && rule->cooldownMs > 0) {
-        double last = 0;
-        {
-            std::lock_guard<std::mutex> lk(mu_);
-            auto it = lastExceptionTime_.find(key);
-            if (it != lastExceptionTime_.end()) last = it->second;
-        }
-        double now = nowSec();
-        if ((now - last) * 1000.0 < rule->cooldownMs) {
-            return RecoveryAction::IGNORE;
-        }
-    }
-
     ExceptionRecord rec;
     rec.exceptionType = exType;
     rec.message = msg;
@@ -81,8 +67,17 @@ RecoveryAction ExceptionHandler::handle(const std::string& exType,
     rec.timestamp = nowSec();
     rec.action = action;
 
+    // Cooldown check and record update under a single lock to prevent TOCTOU race.
     {
         std::lock_guard<std::mutex> lk(mu_);
+        if (rule && rule->cooldownMs > 0) {
+            auto it = lastExceptionTime_.find(key);
+            if (it != lastExceptionTime_.end()) {
+                if ((rec.timestamp - it->second) * 1000.0 < rule->cooldownMs) {
+                    return RecoveryAction::IGNORE;
+                }
+            }
+        }
         records_.push_back(rec);
         if ((int)records_.size() > maxRecords_) {
             records_.erase(records_.begin());
@@ -91,7 +86,7 @@ RecoveryAction ExceptionHandler::handle(const std::string& exType,
         lastExceptionTime_[key] = rec.timestamp;
     }
 
-    // Log
+    // Log (outside the lock to avoid blocking other threads while doing I/O)
     switch (sev) {
         case Severity::SEV_CRITICAL:
         case Severity::SEV_FATAL:
@@ -121,18 +116,30 @@ void ExceptionHandler::executeRecovery(RecoveryAction action,
                                         const std::string& module) {
     if (action == RecoveryAction::EMERGENCY_STOP) {
         LOG_C(MOD, "EMERGENCY STOP triggered by module: %s", module.c_str());
-        if (emergencyCallback_) emergencyCallback_();
+        std::function<void()> cb;
+        {
+            std::lock_guard<std::mutex> lk(mu_);
+            cb = emergencyCallback_;
+        }
+        if (cb) cb();
     } else if (action == RecoveryAction::RESTART_SYSTEM) {
         LOG_C(MOD, "SYSTEM RESTART requested by module: %s", module.c_str());
-        if (restartCallback_) restartCallback_();
+        std::function<void()> cb;
+        {
+            std::lock_guard<std::mutex> lk(mu_);
+            cb = restartCallback_;
+        }
+        if (cb) cb();
     }
 }
 
 void ExceptionHandler::setEmergencyCallback(std::function<void()> cb) {
+    std::lock_guard<std::mutex> lk(mu_);
     emergencyCallback_ = std::move(cb);
 }
 
 void ExceptionHandler::setRestartCallback(std::function<void()> cb) {
+    std::lock_guard<std::mutex> lk(mu_);
     restartCallback_ = std::move(cb);
 }
 

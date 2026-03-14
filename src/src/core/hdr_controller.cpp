@@ -63,8 +63,8 @@ bool HDRController::shouldEnableHDR(const uint8_t* frame, int width, int height)
 
     // Cooldown check
     int64_t now = nowMs();
-    if (now - lastSwitchTimeMs_ < cooldownMs_) {
-        return active_;
+    if (now - lastSwitchTimeMs_.load() < cooldownMs_) {
+        return active_.load();
     }
 
     bool needsHdr = false;
@@ -99,18 +99,18 @@ bool HDRController::shouldEnableHDR(const uint8_t* frame, int width, int height)
         needsHdr = true;
     }
 
-    if (needsHdr != active_) {
-        active_ = needsHdr;
-        lastSwitchTimeMs_ = now;
+    if (needsHdr != active_.load()) {
+        active_.store(needsHdr);
+        lastSwitchTimeMs_.store(now);
         LOG_I(MOD, "HDR %s (brightness=%.1f, DR=%.0f)",
-              active_ ? "ENABLED" : "DISABLED", brightness, p95 - p5);
+              active_.load() ? "ENABLED" : "DISABLED", brightness, p95 - p5);
     }
 
-    return active_;
+    return active_.load();
 }
 
 void HDRController::processFrame(uint8_t* frame, int width, int height) {
-    if (!active_) return;
+    if (!active_.load()) return;
     applyCLAHE(frame, width, height);
 }
 
@@ -229,9 +229,10 @@ void HDRController::computePercentiles(const uint8_t* frame, int size,
     int cumul = 0;
     p5 = 0; p95 = 255;
 
+    bool p5Set = false;
     for (int i = 0; i < 256; ++i) {
         cumul += hist[i];
-        if (cumul >= target5 && p5 == 0) p5 = (float)i;
+        if (!p5Set && cumul >= target5) { p5 = (float)i; p5Set = true; }
         if (cumul >= target95) { p95 = (float)i; break; }
     }
 }
@@ -239,7 +240,7 @@ void HDRController::computePercentiles(const uint8_t* frame, int size,
 HDRController::Status HDRController::getStatus() const {
     std::lock_guard<std::mutex> lk(mu_);
     Status s;
-    s.active = active_;
+    s.active = active_.load();
     switch (mode_) {
         case HDRMode::OFF: s.modeStr = "off"; break;
         case HDRMode::SOFTWARE: s.modeStr = "software"; break;
@@ -253,8 +254,8 @@ HDRController::Status HDRController::getStatus() const {
 
 void HDRController::reset() {
     std::lock_guard<std::mutex> lk(mu_);
-    active_ = false;
+    active_.store(false);
     brightnessHistory_.clear();
-    lastSwitchTimeMs_ = 0;
+    lastSwitchTimeMs_.store(0);
     LOG_I(MOD, "HDR controller reset");
 }

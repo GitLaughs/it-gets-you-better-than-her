@@ -26,7 +26,10 @@ public:
               const std::string& logDir = "/tmp/a1_logs",
               bool console = true, bool file = true);
 
+    LogLevel getLevel() const { return level_; }
     void setLevel(LogLevel level);
+
+    void flush();
 
     void debug(const char* module, const char* fmt, ...);
     void info(const char* module, const char* fmt, ...);

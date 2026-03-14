@@ -21,11 +21,10 @@ static std::atomic<bool> g_running{true};
 static VisionSystem* g_system = nullptr;
 
 void signalHandler(int sig) {
-    LOG_I(MOD, "Signal %d received, shutting down...", sig);
+    // Only set the flag here; do NOT call any non-async-signal-safe functions
+    // (such as stop(), LOG_I, or std::function) from a signal handler.
+    (void)sig;
     g_running = false;
-    if (g_system) {
-        g_system->stop();
-    }
 }
 
 void printUsage(const char* prog) {
@@ -141,7 +140,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Initialize logger
-    Logger::instance().init(logLevel, "/var/log/vision_system.log", 4 * 1024 * 1024);
+    Logger::instance().init("vision_system", static_cast<LogLevel>(logLevel));
 
     LOG_I(MOD, "========================================");
     LOG_I(MOD, "  Embedded Vision System");
@@ -174,12 +173,7 @@ int main(int argc, char* argv[]) {
     signal(SIGPIPE, SIG_IGN);
 
     // Initialize exception handler
-    ExceptionHandler::instance().init(
-        "/var/log/vision_crash.log",
-        [](const std::string& module, const std::string& msg) {
-            LOG_E("CRASH", "[%s] %s", module.c_str(), msg.c_str());
-        }
-    );
+    ExceptionHandler::instance().init();
 
     // Create and initialize vision system
     VisionSystem system;

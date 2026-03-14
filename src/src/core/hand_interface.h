@@ -104,4 +104,7 @@ private:
     // Retry tracking
     int consecutiveErrors_ = 0;
     static constexpr int MAX_CONSECUTIVE_ERRORS = 10;
+
+    // Periodic query counter (instance-level to avoid sharing across instances)
+    int queryCount_ = 0;
 };

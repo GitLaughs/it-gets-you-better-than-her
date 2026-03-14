@@ -9,6 +9,7 @@ Logger& Logger::instance() {
 }
 
 Logger::~Logger() {
+    std::lock_guard<std::mutex> lk(mu_);
     if (fileStream_.is_open()) {
         fileStream_.close();
     }
@@ -95,10 +96,11 @@ void Logger::log(LogLevel level, const char* module, const char* fmt, va_list ar
     char msgBuf[2048];
     vsnprintf(msgBuf, sizeof(msgBuf), fmt, args);
 
+    std::lock_guard<std::mutex> lk(mu_);
+
+    // Generate timestamp inside the lock so log entries are ordered correctly.
     std::string ts = timestamp();
     std::string lev = levelString(level);
-
-    std::lock_guard<std::mutex> lk(mu_);
 
     if (console_) {
         fprintf(stdout, "%s[%s] [%s] [%s]%s %s\n",
@@ -142,4 +144,10 @@ void Logger::critical(const char* module, const char* fmt, ...) {
     va_list args; va_start(args, fmt);
     log(LogLevel::LOG_CRITICAL, module, fmt, args);
     va_end(args);
+}
+
+void Logger::flush() {
+    std::lock_guard<std::mutex> lk(mu_);
+    if (console_) fflush(stdout);
+    if (file_ && fileStream_.is_open()) fileStream_.flush();
 }
