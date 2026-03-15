@@ -458,3 +458,4 @@ E:\it-gets-you-better-than-her\scripts\open_github_cli.bat
 4. **查看仓库状态**：了解当前仓库的最新动态
 
 通过 GitHub CLI，你可以更高效地与 GitHub 交互，减少在浏览器和终端之间切换的次数，提高开发效率。
+刷绿墙
