@@ -29,4 +29,5 @@ ENV PYTHONPATH=/app/src
 ENV A1_SDK_PATH=/app/smartsens_sdk
 ENV PYTHONUNBUFFERED=1
 
-CMD ["bash"]
+# 使用常驻前台进程，保证容器不会因无交互输入而自动退出。
+CMD ["/bin/bash", "-lc", "sleep infinity"]
