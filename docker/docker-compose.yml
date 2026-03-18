@@ -2,9 +2,10 @@ version: '3.8'
 
 services:
   dev:
-    build: .
-    image: a1-sdk-builder
+    image: a1-sdk-builder-fixed:latest
     container_name: A1_Builder
+    command: ["/bin/bash", "-lc", "sleep infinity"]
+    restart: unless-stopped
     stdin_open: true    # -i
     tty: true           # -t
     volumes:
